@@ -1,35 +1,69 @@
 <!DOCTYPE html>
-<html>
+<html lang="my">
 <head>
-    <title>Shan Koe Mee - Buffalo Edition</title>
+    <meta charset="UTF-8">
+    <title>Buffalo Shan Koe Mee</title>
     <style>
-        .card-back {
-            width: 100px;
-            height: 140px;
-            background: #8B4513; /* အညိုရောင် */
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 40px;
-            color: white;
-            border: 3px solid #FFD700;
+        body { background: #1a472a; color: white; font-family: sans-serif; text-align: center; }
+        .table { display: flex; flex-direction: column; align-items: center; margin-top: 50px; }
+        .hand { display: flex; gap: 10px; margin: 20px; min-height: 150px; }
+        .card { 
+            width: 100px; height: 140px; background: white; color: black;
+            border-radius: 8px; display: flex; align-items: center; 
+            justify-content: center; font-weight: bold; font-size: 1.2rem;
+            box-shadow: 2px 2px 10px rgba(0,0,0,0.5);
         }
+        .card.buffalo { 
+            background: #8b4513; color: gold; border: 2px solid gold;
+            font-size: 2rem;
+        }
+        button { 
+            padding: 15px 30px; font-size: 1.2rem; cursor: pointer;
+            background: #d4af37; border: none; border-radius: 5px; font-weight: bold;
+        }
+        .result { font-size: 1.5rem; margin: 20px; color: yellow; }
     </style>
 </head>
 <body>
-    <h1>🐂 Shan Koe Mee (Buffalo Edition)</h1>
-    <div id="game-board">
-        <div class="card-back">🐂</div>
+    <h1>🐂 BUFFALO SHAN KOE MEE</h1>
+    
+    <div class="table">
+        <h3>Bot Hand</h3>
+        <div id="bot-hand" class="hand">
+            <div class="card buffalo">🐂</div>
+            <div class="card buffalo">🐂</div>
+        </div>
+
+        <div id="result" class="result">Ready?</div>
+        <button onclick="playGame()">ဖဲဝေမယ်</button>
+
+        <h3>Your Hand</h3>
+        <div id="player-hand" class="hand"></div>
+        <div id="player-score"></div>
     </div>
-    <button onclick="startGame()">ကတ်ဝေမယ်</button>
 
     <script>
-        async function startGame() {
-            const res = await fetch('/api/deal');
-            const data = await res.json();
-            console.log(data);
-            alert("ကတ်ဝေပြီးပါပြီ။ Console ကိုကြည့်ပါ။");
+        async function playGame() {
+            document.getElementById('result').innerText = "ကတ်ဝေနေသည်...";
+            const response = await fetch('/api/play', { method: 'POST' });
+            const data = await response.json();
+
+            // Display Player Cards
+            const pHand = document.getElementById('player-hand');
+            pHand.innerHTML = data.player.map(c => `<div class="card">${c.rank}${c.suit}</div>`).join('');
+            document.getElementById('player-score').innerText = "ရမှတ်: " + data.player_score;
+
+            // Display Bot Cards
+            const bHand = document.getElementById('bot-hand');
+            bHand.innerHTML = data.bot.map(c => `<div class="card">${c.rank}${c.suit}</div>`).join('');
+
+            // Winner Logic
+            let msg = "";
+            if(data.player_score > data.bot_score) msg = "🎉 သင်နိုင်ပြီ!";
+            else if(data.player_score < data.bot_score) msg = "💀 Bot နိုင်သွားပြီ!";
+            else msg = "🤝 သရေပဲ!";
+            
+            document.getElementById('result').innerText = msg;
         }
     </script>
 </body>
