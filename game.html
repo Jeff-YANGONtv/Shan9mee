@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buffalo Shan Koe Mee</title>
+    <style>
+        :root {
+            --primary: #1a472a;
+            --gold: #ffd700;
+            --buffalo-brown: #8b4513;
+        }
+
+        body {
+            margin: 0; background: var(--primary);
+            color: white; font-family: sans-serif;
+            display: flex; flex-direction: column; align-items: center;
+            overflow: hidden; height: 100vh;
+        }
+
+        /* Game Header */
+        .header { margin-top: 20px; text-align: center; }
+        .back-link { color: var(--gold); text-decoration: none; font-size: 14px; }
+
+        /* Game Table */
+        .table {
+            flex: 1; width: 100%; max-width: 500px;
+            display: flex; flex-direction: column; justify-content: space-around;
+            align-items: center; position: relative;
+        }
+
+        .hand { display: flex; gap: 10px; min-height: 120px; align-items: center; }
+
+        /* Card Design */
+        .card {
+            width: 80px; height: 120px;
+            background: white; color: black;
+            border-radius: 8px; display: flex;
+            flex-direction: column; align-items: center;
+            justify-content: center; font-weight: bold;
+            font-size: 1.2rem; position: relative;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+            transition: transform 0.5s ease-out;
+        }
+
+        .card.red { color: #d12d2d; }
+
+        /* ကျွဲပုံ Card Back */
+        .card.back {
+            background: var(--buffalo-brown);
+            border: 2px solid var(--gold);
+            color: var(--gold);
+        }
+
+        .card.back::after { content: '🐂'; font-size: 2.5rem; }
+
+        /* UI Elements */
+        .score-badge {
+            background: rgba(0,0,0,0.6); padding: 5px 15px;
+            border-radius: 20px; border: 1px solid var(--gold);
+            margin-top: 10px; font-size: 14px;
+        }
+
+        .controls { margin-bottom: 40px; display: flex; gap: 15px; }
+
+        button {
+            padding: 12px 25px; border-radius: 25px; border: none;
+            background: var(--gold); color: #000; font-weight: bold;
+            font-size: 1rem; cursor: pointer; box-shadow: 0 4px 0 #b8860b;
+        }
+
+        button:active { transform: translateY(3px); box-shadow: none; }
+
+        .status-msg { font-size: 1.5rem; color: var(--gold); font-weight: bold; height: 30px; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <a href="index.html" class="back-link">⬅ မူလစာမျက်နှာ</a>
+        <div class="status-msg" id="status">Ready?</div>
+    </div>
+
+    <div class="table">
+        <div>
+            <div id="bot-hand" class="hand">
+                <div class="card back"></div>
+                <div class="card back"></div>
+            </div>
+            <center><div class="score-badge">Bot: ?</div></center>
+        </div>
+
+        <div>
+            <center><div id="player-score" class="score-badge">သင့်ရမှတ်: 0</div></center>
+            <div id="player-hand" class="hand">
+                <div class="card back"></div>
+                <div class="card back"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button onclick="startGame()">ဖဲဝေမည်</button>
+        <button id="hit-btn" onclick="hitCard()" style="display:none; background: #fff;">ကတ်ဆွဲမည်</button>
+    </div>
+
+    <script>
+        let deck = [];
+        let playerHand = [];
+        let botHand = [];
+
+        function createDeck() {
+            const suits = ['♠', '♥', '♦', '♣'];
+            const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+            let newDeck = [];
+            for (let s of suits) {
+                for (let r of ranks) {
+                    let val = (['J', 'Q', 'K', '10'].includes(r)) ? 0 : (r === 'A' ? 1 : parseInt(r));
+                    newDeck.push({ suit: s, rank: r, val: val, color: (s === '♥' || s === '♦') ? 'red' : 'black' });
+                }
+            }
+            return newDeck.sort(() => Math.random() - 0.5);
+        }
+
+        function calculateScore(hand) {
+            let total = hand.reduce((sum, card) => sum + card.val, 0);
+            return total % 10;
+        }
+
+        function renderHand(elementId, hand, isBack) {
+            const el = document.getElementById(elementId);
+            el.innerHTML = hand.map(card => 
+                isBack ? `<div class="card back"></div>` : 
+                `<div class="card ${card.color}">${card.rank}<br>${card.suit}</div>`
+            ).join('');
+        }
+
+        function startGame() {
+            deck = createDeck();
+            playerHand = [deck.pop(), deck.pop()];
+            botHand = [deck.pop(), deck.pop()];
+            
+            document.getElementById('status').innerText = "ကစားနေသည်...";
+            document.getElementById('hit-btn').style.display = 'inline-block';
+            
+            renderHand('player-hand', playerHand, false);
+            renderHand('bot-hand', botHand, true);
+            
+            updateScore();
+        }
+
+        function updateScore() {
+            const score = calculateScore(playerHand);
+            document.getElementById('player-score').innerText = `သင့်ရမှတ်: ${score}`;
+            if (score >= 8) settle(); // ၈ သို့ ၉ ပေါက်ရင် အလိုအလျောက် ပေါက်မယ်
+        }
+
+        function hitCard() {
+            if (playerHand.length < 3) {
+                playerHand.push(deck.pop());
+                renderHand('player-hand', playerHand, false);
+                updateScore();
+                settle();
+            }
+        }
+
+        function settle() {
+            document.getElementById('hit-btn').style.display = 'none';
+            
+            // Bot AI Logic
+            let botScore = calculateScore(botHand);
+            if (botScore < 5) {
+                botHand.push(deck.pop());
+                botScore = calculateScore(botHand);
+            }
+
+            // Show Bot Cards
+            renderHand('bot-hand', botHand, false);
+            
+            const pScore = calculateScore(playerHand);
+            let msg = "";
+            if (pScore > botScore) msg = "🎉 သင်နိုင်ပြီ!";
+            else if (pScore < botScore) msg = "💀 Bot နိုင်ပြီ!";
+            else msg = "🤝 သရေပဲ!";
+            
+            document.getElementById('status').innerText = msg;
+        }
+    </script>
+</body>
+</html>
