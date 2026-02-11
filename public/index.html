@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Shan Koe Mee - Buffalo Edition</title>
+    <style>
+        .card-back {
+            width: 100px;
+            height: 140px;
+            background: #8B4513; /* အညိုရောင် */
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            color: white;
+            border: 3px solid #FFD700;
+        }
+    </style>
+</head>
+<body>
+    <h1>🐂 Shan Koe Mee (Buffalo Edition)</h1>
+    <div id="game-board">
+        <div class="card-back">🐂</div>
+    </div>
+    <button onclick="startGame()">ကတ်ဝေမယ်</button>
+
+    <script>
+        async function startGame() {
+            const res = await fetch('/api/deal');
+            const data = await res.json();
+            console.log(data);
+            alert("ကတ်ဝေပြီးပါပြီ။ Console ကိုကြည့်ပါ။");
+        }
+    </script>
+</body>
+</html>
